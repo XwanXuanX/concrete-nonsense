@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 volatile int counter = 0;
+// this is the fix!
+// _Atomic volatile int counter = 0;
 int loops;
 
 void *worker(void *arg) {
