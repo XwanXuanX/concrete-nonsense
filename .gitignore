@@ -56,3 +56,6 @@ dkms.conf
 
 # vscode dotfiles
 .vscode
+
+# output files
+*.output
