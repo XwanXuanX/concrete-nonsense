@@ -1,5 +1,9 @@
 ---
 BasedOnStyle: LLVM
 IndentWidth: 4
+
+SortIncludes: false
+IncludeBlocks: Preserve
+
+IndentPPDirectives: None
 ---
-Language: C
