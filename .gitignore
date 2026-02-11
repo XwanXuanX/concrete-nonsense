@@ -61,4 +61,4 @@ dkms.conf
 *.output
 
 # the command line parser library
-argy.hpp
+argy*
