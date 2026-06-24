@@ -43,6 +43,7 @@ The root of the query plan asks for one output tuple. To produce that tuple, it 
 
 ## Cons
 
+- No natural parallelism
 - Tuple-at-a-time function call have high overhead
 - Poor cache and CPU efficiency compared with vectorized execution
 - Hard to exploit SIMD and modern CPU features
