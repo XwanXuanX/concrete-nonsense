@@ -55,7 +55,9 @@ Thread B:
     TableScan
 ```
 
+## Multiple `Exchange` Operators
 
+When there are multiple `Exchange` operators in a query plan, the subtree that is under each `Exchange` gets its own execution context:
 
 ```mermaid
 graph TD
@@ -123,13 +125,85 @@ graph TD
     %% ==========================================
     %% CONNECTIONS (Data Flow)
     %% ==========================================
-    Op9 -->|Fetches final rows| Ex3
-    Ex3 -->|Network Transfer| Op8
+    Op9 --> Ex3
+    Ex3 --> Op8
     
-    Op7 -->|Left Input| Ex1
-    Op7 -->|Right Input| Ex2
+    Op7 --> Ex1
+    Op7 --> Ex2
     
-    Ex1 -->|Network Shuffle| Op4
-    Ex2 -->|Network Shuffle| Op2
+    Ex1 --> Op4
+    Ex2 --> Op2
 ```
 
+Each `Exchange` operator exchanges data between execution contexts (via producer and consumer queue), hence the name.
+
+## Type of `Exchange` Operators
+
+Think of query plan as a dataflow graph:
+- Normal operators transform data:
+  - `Scan -> Filter -> Join -> Aggregte`
+- Exchange operators route data:
+  - gather
+  - merge
+  - shuffle
+  - broadcast
+  - partition
+
+### Gather exchange
+
+The gather exchange merges all output streams into one stream.
+
+Query:
+```sql
+SELECT * FROM users WHERE age > 30;
+```
+
+Plan:
+```
+Filter(age > 30)
+    |
+GatherExchange
+   /      |      \
+Scan    Scan    Scan
+```
+
+### Broadcast exchange
+
+One input is copied to many workers.
+
+Query:
+```sql
+SELECT * FROM huge_orders o JOIN small_users u ON o.user_id = u.id;
+```
+
+Plan:
+```
+small_users
+    |
+BroadcastExchange
+   /       |       \
+Worker1 Worker2 Worker3
+```
+
+In this plan, `small_users` is small, while `huge_orders` is huge.
+To perform this `JOIN`, we partition the `huge_orders` table into 3 partitions and scan them in parallel.
+Then broadcast the `small_users` table to every worker scanning `huge_orders`, then each worker can do a local `JOIN`.
+
+### Re-partition exchange
+
+Many streams to many streams by key.
+
+### Round-robin exchange
+
+Distribute rows evenly. Used for load balancing.
+
+```
+row 1 -> worker 0
+row 2 -> worker 1
+row 3 -> worker 2
+...
+```
+
+### Merge exchange
+
+Combine sorted streams while preserving order. Used when order must be preserved.
