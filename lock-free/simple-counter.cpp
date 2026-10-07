@@ -8,11 +8,17 @@ int normal = 0;
 
 void worker() {
     for(int i = 0; i < 100000; ++i) {
-        int expected, desired;
-        do {
-            desired = expected + 1;
-        } while(!counter.compare_exchange_weak(expected, desired));
-        // counter.fetch_add(1);
+        {
+            int expected = counter.load();
+            int desired = 0;
+            do {
+                desired = expected + 1;
+            } while(!counter.compare_exchange_weak(expected, desired));
+        }
+        {
+            // The above CAS is equal to this line.
+            // counter.fetch_add(1);
+        }
         normal++;
     }
 }
